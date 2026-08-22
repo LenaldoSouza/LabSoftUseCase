@@ -5,10 +5,10 @@ namespace GestaoTarefas;
 class Program
 {
     static void Main(string[] args)
-    {
+    {// Em Program.cs, modifique o bloco do cabeçalho:
         Console.WriteLine("=================================");
-        Console.WriteLine("   SISTEMA DE GESTÃO DE TAREFAS");
-        Console.WriteLine("=================================\\n");
+        Console.WriteLine(" SoftwareHouse - SISTEMA DE GESTÃO DE TAREFAS");
+        Console.WriteLine("=================================\n");
 
         Console.Write("Digite o nome da tarefa: ");
         string nome = Console.ReadLine() ?? "Sem nome";

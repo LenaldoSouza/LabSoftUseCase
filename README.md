@@ -194,7 +194,7 @@ Você deve criar a CRUD completo para cada fluxo (Departamento e CentralDeCusto)
 
 Para cada fluxo crie um branch diferente partindo da develop e depois aça
 
-Execute o script abaixo no SQL Server para criar as tabelas
+Execute o script abaixo no SQL Server para criar a nova tabela `Incidente`:
 
 ```sql
 USE dbTasks;

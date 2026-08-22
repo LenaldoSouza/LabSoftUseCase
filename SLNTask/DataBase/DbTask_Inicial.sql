@@ -37,3 +37,30 @@ INSERT INTO Tarefa (Descricao, DataPlanejada, DataIniciada, DataFinalizada, Data
 ('Criar tela de Login', '2026-08-10', '2026-08-01', NULL, NULL, 'Em Andamento', 'Em dia', 1),
 ('Homologar Release 1.0', '2026-08-05', NULL, NULL, NULL, 'Pendente', 'Em atraso', 2);
 GO
+
+USE dbTasks;
+GO
+
+CREATE TABLE Incidente (
+    Codigo INT IDENTITY(1,1) PRIMARY KEY,
+    DescricaoProblema VARCHAR(250) NOT NULL,
+    DataIncidente DATETIME NOT NULL,
+    Solucao VARCHAR(250) NULL,
+    Resolvido VARCHAR(3) NOT NULL -- 'sim' ou 'nao'
+);
+GO
+
+USE dbTasks;
+GO
+
+CREATE TABLE Departamento (
+    Codigo INT IDENTITY(1,1) PRIMARY KEY,
+    Descricao VARCHAR(250) NOT NULL,
+    Ativo bit NULL
+);
+GO
+CREATE TABLE CentralDeCusto (
+    Codigo INT IDENTITY(1,1) PRIMARY KEY,
+    NomeCentral VARCHAR(250) NOT NULL,
+    ValorMetaAnual decimal default(0)
+);

@@ -37,3 +37,4 @@ INSERT INTO Tarefa (Descricao, DataPlanejada, DataIniciada, DataFinalizada, Data
 ('Criar tela de Login', '2026-08-10', '2026-08-01', NULL, NULL, 'Em Andamento', 'Em dia', 1),
 ('Homologar Release 1.0', '2026-08-05', NULL, NULL, NULL, 'Pendente', 'Em atraso', 2);
 GO
+

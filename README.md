@@ -1,24 +1,36 @@
-# 🚀 Guia Prático: POO C# - ESTRUTURA E REGRAS DE NEGÓCIO DA CLÍNICA MÉDICA
+# 🚀🚀 Guia Prático: Design Patterns C# - IMPLEMENTAÇÃO DO PATTERN PROTOTYPE NA CLÍNICA MÉDICA
 
 ## 📌 Contexto do Projeto: Sistema Interno da Clínica "Vida & Saúde"
 
-Antes de persistir dados em banco de dados ou construir APIs, é fundamental estruturar o domínio da aplicação utilizando os conceitos centrais da Programação Orientada a Objetos (POO).
+Em sistemas de gestão hospitalar e clínica, é comum a criação recorrente de objetos complexos com configurações padronizadas. Criar esses objetos do zero instanciando todas as propriedades repetidamente pode gerar código redundante e gargalos de processamento.
 
-Nesta atividade, você desenvolverá uma aplicação Console em **C# (.NET 9)** focada no gerenciamento interno da clínica médica "Vida & Saúde". O objetivo principal é aplicar os pilares de **Abstração, Herança, Encapsulamento, Polimorfismo**, além do uso de **Interfaces** e manipulação de dados em memória usando **Listas (`List<T>`)**.
+Nesta atividade, você desenvolverá uma aplicação Console em C# (.NET 9) que aplica o padrão de projeto criacional Prototype. O objetivo é permitir que a clínica clone modelos pré-configurados de exames, prontuários e agendamentos recorrentes sem reconstruí-los manualmente.
+
+---
+
+## 💼 Regra de Negócio: O Problema dos Check-ups e Protocolos Médicos
+A clínica "Vida & Saúde" oferece pacotes de exames padronizados (ex: Check-up Cardiológico Geral, Check-up Admissional, Rotina Pediatria). Cada pacote possui um conjunto fixo de procedimentos, orientações prévias e valores base.
+
+1. Agilidade no Atendimento: Em vez de configurar individualmente cada solicitação de exame com suas dezenas de instruções (ex: "Jejum de 8h", "Chegar 15 min antes"), o 2. atendente deve clona um Protótipo de Pacote de Exame já cadastrado.
+
+2. Customização Individual: Após a clonagem, o atendente pode personalizar os dados do paciente, médico solicitante e data/hora sem alterar o pacote modelo original.
+
+3. Cópia Superficial vs. Cópia Profunda (Shallow vs. Deep Copy): As consultas contêm objetos aninhados (como o Paciente e a Lista de Procedimentos). Precisamos garantir3 que alterar a lista de procedimentos de um paciente clonado não altere o modelo base e vice-versa
 
 ---
 
 ## 🛠️ Pré-requisitos
+
 - Visual Studio 2022 ou VS Code (com .NET 9 SDK instalado)
-- Conhecimentos básicos da sintaxe do C#
+- Conhecimentos básicos de POO em C# (Classes, Interfaces e Enums
 
 ---
 
 ## 🎯 Objetivos de Aprendizagem
-1. **Criar Classes e Atributos**: Modelar entidades reais com propriedades e métodos bem definidos.
-2. **Implementar Herança**: Criar classes derivadas aproveitando atributos e comportamentos de uma classe base abstrata.
-3. **Implementar Interfaces**: Definir contratos para padronizar relatórios e notificações no sistema.
-4. **Manipular Listas (`List<T>`)**: Utilizar coleções genéricas e consultas LINQ para gerenciar dados em memória.
+1. **Compreender o Pattern Prototype: Entender quando e por que clonar objetos existentes.
+2. **Diferenciar Cópia Superficial e Profunda: Dominar a diferença técnica entre Shallow Copy e Deep Copy.
+3. **Implementar a Interface de Clonagem: Utilizar contratos explícitos para padronizar o método Clonar().
+4. **Gerenciar Protótipos em Memória: Criar um registro centralizado (Prototype Registry) para disponibilizar os modelos da clínica
 
 ---
 
@@ -26,186 +38,120 @@ Nesta atividade, você desenvolverá uma aplicação Console em **C# (.NET 9)** 
 
 ---
 
-### 📂 Etapa 1: Estrutura Base e Herança (Pessoa, Paciente e Medico)
+### 📂 Etapa 1: Definindo o Contrato do Protótipo e Classes de Apoio
 
-Como pacientes e médicos compartilham características comuns (Nome, CPF e Telefone), vamos criar uma classe base abstrata para evitar repetição de código.
+#### Subtarefa 1.1: Criar a interface IPrototipo<T>
+Crie o arquivo IPrototipo.cs na pasta Interfaces. Utilizaremos uma interface genérica para garantir tipagem forte na clonagem.
 
-  ![DER](./imagens/OO_conceitos.png)
+```csharp
+namespace ClinicaPOO.Interfaces
+{
+    public interface IPrototipo<T>
+    {
+        T Clonar();     // Cópia Profunda (Deep Copy)
+        T ClonarRaso(); // Cópia Superficial (Shallow Copy)
+    }
+}
 
-#### Subtarefa 1.1: Criar a classe abstrata `Pessoa`
-1. Crie a classe abstrata `Pessoa.cs`.
-2. Encapsule as propriedades: `Codigo` (int), `Nome` (string), `Cpf` (string) e `Telefone` (string).
-3. Adicione o método abstrato `ExibirFicha()`, que deverá ser implementado obrigatoriamente pelas classes derivadas.
+```
+
+#### Subtarefa 1.2: Criar a classe Procedimento
+Crie o arquivo Procedimento.cs na pasta Models. Representa um item do pacote de exames.
 
 ```csharp
 namespace ClinicaPOO.Models
 {
-    public abstract class Pessoa
+    public class Procedimento : IPrototipo<Procedimento>
     {
-        public int Codigo { get; set; }
         public string Nome { get; set; } = string.Empty;
-        public string Cpf { get; set; } = string.Empty;
-        public string Telefone { get; set; } = string.Empty;
+        public decimal Valor { get; set; }
 
-        protected Pessoa(int codigo, string nome, string cpf, string telefone)
+        public Procedimento(string nome, decimal valor)
         {
-            Codigo = codigo;
             Nome = nome;
-            Cpf = cpf;
-            Telefone = telefone;
+            Valor = valor;
         }
 
-        // Método abstrato obrigatório para implementação das filhas
-        public abstract void ExibirFicha();
-    }
-}
-```
-
-#### Subtarefa 1.2: Criar a classe `Paciente` (Herdando de Pessoa)
-1. Crie a classe `Paciente.cs` herdando de `Pessoa`.
-2. Adicione a propriedade `DataNascimento` (DateTime).
-3. Sobrescreva o método `ExibirFicha()` para mostrar os dados específicos do paciente.
-
-```csharp
-namespace ClinicaPOO.Models
-{
-    public class Paciente : Pessoa
-    {
-        public DateTime DataNascimento { get; set; }
-
-        public Paciente(int codigo, string nome, string cpf, string telefone, DateTime dataNascimento)
-            : base(codigo, nome, cpf, telefone)
+        // Cópia para tipos por valor (structs/strings imutáveis)
+        public Procedimento Clonar()
         {
-            DataNascimento = dataNascimento;
+            return (Procedimento)MemberwiseClone();
         }
 
-        public override void ExibirFicha()
+        public Procedimento ClonarRaso()
         {
-            Console.WriteLine($"[PACIENTE] Cód: {Codigo} | Nome: {Nome} | CPF: {Cpf} | Data Nasc: {DataNascimento:dd/MM/yyyy}");
+            return Clonar();
         }
     }
 }
 ```
 
-#### Subtarefa 1.3: Criar a classe `Medico` (Herdando de Pessoa)
-1. Crie a classe `Medico.cs` herdando de `Pessoa`.
-2. Adicione as propriedades `Crm` (string) e `Especialidade` (string).
-3. Sobrescreva o método `ExibirFicha()`.
+### 📂 Etapa 2: Implementando a Classe Complexa Prototipável (PacoteExame)
 
-```csharp
-namespace ClinicaPOO.Models
-{
-    public class Medico : Pessoa
-    {
-        public string Crm { get; set; }
-        public string Especialidade { get; set; }
-
-        public Medico(int codigo, string nome, string cpf, string telefone, string crm, string especialidade)
-            : base(codigo, nome, cpf, telefone)
-        {
-            Crm = crm;
-            Especialidade = especialidade;
-        }
-
-        public override void ExibirFicha()
-        {
-            Console.WriteLine($"[MÉDICO] Cód: {Codigo} | Dr(a). {Nome} | CRM: {Crm} | Esp: {Especialidade}");
-        }
-    }
-}
-```
-
----
-
-### 📂 Etapa 2: Implementando Contratos com Interfaces
-
-Interfaces garantem que diferentes classes sigam um mesmo padrão de comportamento sem necessariamente compor uma relação de herança.
+O PacoteExame contém referências para uma lista de procedimentos. Aqui aplicaremos o conceito de Deep Copy.
 
 
-  ![interface](./imagens/OO_conceitos.png)
-
-#### Subtarefa 2.1: Criar a interface `INotificavel`
-Crie o arquivo `INotificavel.cs` na pasta `Interfaces`. Esta interface define a obrigatoriedade do envio de avisos aos pacientes.
-
-```csharp
-namespace ClinicaPOO.Interfaces
-{
-    public interface INotificavel
-    {
-        void EnviarNotificacao(string mensagem);
-    }
-}
-```
-
-#### Subtarefa 2.2: Criar a interface `IRelatorio`
-Crie o arquivo `IRelatorio.cs` na pasta `Interfaces` para padronizar a geração de resumos textuais.
-
-```csharp
-namespace ClinicaPOO.Interfaces
-{
-    public interface IRelatorio
-    {
-        string GerarResumo();
-    }
-}
-```
-
----
-
-### 📂 Etapa 3: Classe `Consulta` e Aplicação de Interfaces
-
-A classe `Consulta` será responsável por associar um paciente a um médico em uma data e horário específicos.
-
-#### Subtarefa 3.1: Criar e implementar a classe `Consulta`
-1. Crie a classe `Consulta.cs`.
-2. Implemente as interfaces `INotificavel` e `IRelatorio`.
-3. Adicione atributos e controle o `Status` da consulta através de métodos de mudança de estado (Cancelada, Realizada, Agendada).
+#### Subtarefa 2.1: Criar a classe PacoteExamel
+Crie o arquivo PacoteExame.cs na pasta Models.
 
 ```csharp
 using ClinicaPOO.Interfaces;
 
 namespace ClinicaPOO.Models
 {
-    public class Consulta : INotificavel, IRelatorio
+    public class PacoteExame : IPrototipo<PacoteExame>
     {
-        public int Codigo { get; set; }
-        public DateTime DataHora { get; set; }
-        public Paciente Paciente { get; set; }
-        public Medico Medico { get; set; }
-        public string Status { get; private set; } // Modificador private para manter o encapsulamento
+        public string NomePacote { get; set; } = string.Empty;
+        public string OrientaçõesJejum { get; set; } = string.Empty;
+        public string NomePaciente { get; set; } = string.Empty;
+        public List<Procedimento> Procedimentos { get; set; } = new List<Procedimento>();
 
-        public Consulta(int codigo, DateTime dataHora, Paciente paciente, Medico medico)
+        public PacoteExame() { }
+
+        public PacoteExame(string nomePacote, string orientacoesJejum)
         {
-            Codigo = codigo;
-            DataHora = dataHora;
-            Paciente = paciente;
-            Medico = medico;
-            Status = "Agendada";
+            NomePacote = nomePacote;
+            OrientaçõesJejum = orientacoesJejum;
         }
 
-        public void Cancelar()
+        public void AdicionarProcedimento(Procedimento proc)
         {
-            Status = "Cancelada";
-            EnviarNotificacao($"Sua consulta agendada para {DataHora:dd/MM/yyyy HH:mm} foi CANCELADA.");
+            Procedimentos.Add(proc);
         }
 
-        public void Realizar()
+        // Cópia Superficial: Copia referências. A lista apontará para a MESMA memória do modelo original.
+        public PacoteExame ClonarRaso()
         {
-            Status = "Realizada";
+            return (PacoteExame)MemberwiseClone();
         }
 
-        // Implementação do contrato INotificavel
-        public void EnviarNotificacao(string mensagem)
+        // Cópia Profunda: Duplica o objeto E sua lista de procedimentos interna.
+        public PacoteExame Clonar()
         {
-            Console.WriteLine($"[NOTIFICAÇÃO -> Telefone: {Paciente.Telefone}]: Olá {Paciente.Nome}, {mensagem}");
+            var clone = (PacoteExame)MemberwiseClone();
+            
+            // Instancia uma nova lista e clona elemento por elemento
+            clone.Procedimentos = new List<Procedimento>();
+            foreach (var proc in this.Procedimentos)
+            {
+                clone.Procedimentos.Add(proc.Clonar());
+            }
+
+            return clone;
         }
 
-        // Implementação do contrato IRelatorio
-        public string GerarResumo()
+        public void ExibirResumo()
         {
-            return $"Consulta #{Codigo} | Data: {DataHora:dd/MM/yyyy HH:mm} | Status: [{Status}]\n" +
-                   $"   Paciente: {Paciente.Nome} (CPF: {Paciente.Cpf})\n" +
-                   $"   Médico: Dr(a). {Medico.Nome} ({Medico.Especialidade} - {Medico.Crm})";
+            Console.WriteLine($"\n[PACOTE]: {NomePacote} | Paciente: {(string.IsNullOrEmpty(NomePaciente) ? "NÃO ATRIBUÍDO" : NomePaciente)}");
+            Console.WriteLine($"  Orientação: {OrientaçõesJejum}");
+            Console.WriteLine("  Procedimentos inclusos:");
+            decimal total = 0;
+            foreach (var p in Procedimentos)
+            {
+                Console.WriteLine($"   - {p.Nome}: R$ {p.Valor:F2}");
+                total += p.Valor;
+            }
+            Console.WriteLine($"  Total: R$ {total:F2}");
         }
     }
 }
@@ -213,131 +159,111 @@ namespace ClinicaPOO.Models
 
 ---
 
-### 📂 Etapa 4: Gerenciamento de Listas em Memória (`List<T>`)
+### 📂 Etapa 3: Gerenciador de Protótipos (Prototype Registry)
 
-Crie a classe `ClinicaService.cs` para gerenciar as listas de objetos (`List<T>`) e executar buscas e inserções.
+Para evitar a instanciação direta no código principal, usaremos um registro para armazenar os protótipos pré-configurados da clínica
 
-#### Subtarefa 4.1: Criar a classe `ClinicaService`
+#### Subtarefa 3.1: Criar a classe GerenciadorProtótipos
+Crie o arquivo GerenciadorPrototipos.cs na pasta Services
 
 ```csharp
 using ClinicaPOO.Models;
 
 namespace ClinicaPOO.Services
 {
-    public class ClinicaService
+    public class GerenciadorPrototipos
     {
-        // Declaração das Listas Genéricas
-        public List<Paciente> Pacientes { get; private set; } = new List<Paciente>();
-        public List<Medico> Medicos { get; private set; } = new List<Medico>();
-        public List<Consulta> Consultas { get; private set; } = new List<Consulta>();
+        private readonly Dictionary<string, PacoteExame> _prototipos = new();
 
-        public void CadastrarPaciente(Paciente paciente) => Pacientes.Add(paciente);
-        
-        public void CadastrarMedico(Medico medico) => Medicos.Add(medico);
-
-        public void AgendarConsulta(int codigo, DateTime dataHora, int codigoPaciente, int codigoMedico)
+        public void CadastrarPrototipo(string chave, PacoteExame prototipo)
         {
-            // Busca dos objetos na lista usando LINQ
-            var paciente = Pacientes.FirstOrDefault(p => p.Codigo == codigoPaciente);
-            var medico = Medicos.FirstOrDefault(m => m.Codigo == codigoMedico);
-
-            if (paciente == null)
-            {
-                Console.WriteLine("❌ Erro: Paciente não encontrado!");
-                return;
-            }
-
-            if (medico == null)
-            {
-                Console.WriteLine("❌ Erro: Médico não encontrado!");
-                return;
-            }
-
-            var novaConsulta = new Consulta(codigo, dataHora, paciente, medico);
-            Consultas.Add(novaConsulta);
-
-            Console.WriteLine("✅ Consulta agendada com sucesso!");
-            
-            // Disparando notificação via Interface
-            novaConsulta.EnviarNotificacao($"sua consulta com Dr(a). {medico.Nome} foi confirmada.");
+            _prototipos[chave] = prototipo;
         }
 
-        public void ExibirRelatorioGeral()
+        public PacoteExame ObterClone(string chave)
         {
-            Console.WriteLine("\n=================== RELATÓRIO DE CONSULTAS ===================");
-            if (Consultas.Count == 0)
+            if (_prototipos.TryGetValue(chave, out var prototipo))
             {
-                Console.WriteLine("Nenhuma consulta registrada.");
-                return;
+                // Retorna uma Cópia Profunda por padrão para segurança das alterações
+                return prototipo.Clonar();
             }
 
-            foreach (var consulta in Consultas)
-            {
-                Console.WriteLine(consulta.GerarResumo());
-                Console.WriteLine("--------------------------------------------------------------");
-            }
+            throw new KeyNotFoundException($"O protótipo '{chave}' não foi encontrado no registro.");
         }
     }
 }
+
 ```
 
 ---
 
-### 📂 Etapa 5: Testando a Aplicação (`Program.cs`)
+### 📂 Etapa 4: Testando e Comparando Shallow Copy vs Deep Copy (Program.cs)
 
-No arquivo `Program.cs`, monte a execução do programa instanciando objetos e executando as ações simuladas.
+No Program.cs, simularemos o fluxo de atendimento da clínica e testaremos o comportamento das cópias em memória.
 
-#### Subtarefa 5.1: Código do `Program.cs`
+#### Subtarefa 4.1: Código do Program.cs`
 
 ```csharp
 using ClinicaPOO.Models;
 using ClinicaPOO.Services;
 
-var clinica = new ClinicaService();
+Console.WriteLine("=== SISTEMA DA CLÍNICA VIDA & SAÚDE - PATTERN PROTOTYPE ===\n");
 
-Console.WriteLine("=== SISTEMA DA CLÍNICA VIDA & SAÚDE ===\n");
+var gerenciador = new GerenciadorPrototipos();
 
-// 1. Criando e adicionando Pacientes
-var p1 = new Paciente(1, "Maria Oliveira", "111.222.333-44", "(11) 98888-7777", new DateTime(1990, 5, 15));
-var p2 = new Paciente(2, "João Souza", "555.666.777-88", "(11) 97777-6666", new DateTime(1985, 10, 20));
+// 1. CONFIGURAÇÃO DOS PROTÓTIPOS MODELO (Feito na inicialização do sistema)
+var checkupCardio = new PacoteExame("Check-up Cardiológico", "Jejum de 8h e evitar cafeína");
+checkupCardio.AdicionarProcedimento(new Procedimento("Eletrocardiograma", 150.00m));
+checkupCardio.AdicionarProcedimento(new Procedimento("Ecocardiograma", 350.00m));
+checkupCardio.AdicionarProcedimento(new Procedimento("Teste Ergométrico", 200.00m));
 
-clinica.CadastrarPaciente(p1);
-clinica.CadastrarPaciente(p2);
+gerenciador.CadastrarPrototipo("CARDIO_PADRAO", checkupCardio);
 
-// 2. Criando e adicionando Médicos
-var m1 = new Medico(1, "Helena Rios", "123.456.789-00", "(11) 91111-2222", "CRM/SP 123456", "Cardiologia");
-var m2 = new Medico(2, "Roberto Alves", "987.654.321-11", "(11) 93333-4444", "CRM/SP 654321", "Ortopedia");
+Console.WriteLine("--- Exibindo o Modelo Base ---");
+checkupCardio.ExibirResumo();
 
-clinica.CadastrarMedico(m1);
-clinica.CadastrarMedico(m2);
+// 2. ATENDIMENTO PACIENTE 1 (Uso de Deep Copy - Recomendado)
+Console.WriteLine("\n------------------------------------------------");
+Console.WriteLine("--> Atendimento 1: Clonando modelo via Deep Copy");
+var atendimento1 = gerenciador.ObterClone("CARDIO_PADRAO");
+atendimento1.NomePaciente = "Carlos Eduardo";
 
-// 3. Testando o método polimórfico ExibirFicha()
-Console.WriteLine("--- Cadastros Realizados ---");
-p1.ExibirFicha();
-m1.ExibirFicha();
-Console.WriteLine();
+// Personalizando: Adicionando um procedimento extra só para este paciente
+atendimento1.AdicionarProcedimento(new Procedimento("Holter 24h", 250.00m));
 
-// 4. Agendando Consultas
-Console.WriteLine("--- Agendamentos ---");
-clinica.AgendarConsulta(101, DateTime.Now.AddDays(2), 1, 1);
-clinica.AgendarConsulta(102, DateTime.Now.AddDays(3), 2, 2);
+atendimento1.ExibirResumo();
 
-// 5. Exibindo Relatório das Consultas
-clinica.ExibirRelatorioGeral();
+// 3. DEMONSTRAÇÃO DO PERIGO DA CÓPIA SUPERFICIAL (Shallow Copy)
+Console.WriteLine("\n------------------------------------------------");
+Console.WriteLine("--> Atendimento 2: Exemplo de Clonagem Rasa (Shallow Copy)");
 
-// 6. Testando alteração de estado (Cancelamento)
-Console.WriteLine("\n--- Cancelamento de Consulta ---");
-var consultaParaCancelar = clinica.Consultas.FirstOrDefault(c => c.Codigo == 101);
-consultaParaCancelar?.Cancelar();
+var modeloBase = gerenciador.ObterClone("CARDIO_PADRAO"); // Base original
+var atendimentoErro = modeloBase.ClonarRaso();           // Clone Raso
+atendimentoErro.NomePaciente = "Ana Maria";
 
-// Relatório Atualizado
-clinica.ExibirRelatorioGeral();
+// Alterando a lista no clone raso
+atendimentoErro.Procedimentos.Add(new Procedimento("Glicemia em Jejum", 30.00m));
+
+Console.WriteLine("\n[Alerta]: Procedimento adicionado na cópia rasa do cliente:");
+atendimentoErro.ExibirResumo();
+
+Console.WriteLine("\n[VERIFICAÇÃO]: Modelo Base após alteração no clone raso:");
+modeloBase.ExibirResumo(); // A lista do modelo base FOI ALTERADA indevidamente!
+
+// 4. VERIFICAÇÃO DO PACIENTE 1 (Deep Copy manteve-se isolado)
+Console.WriteLine("\n------------------------------------------------");
+Console.WriteLine("[VERIFICAÇÃO]: Atendimento 1 (Deep Copy) permaneceu isolado:");
+atendimento1.ExibirResumo();
+
 ```
 
 ---
 
+
+
+
 ## 🚀 Desafios Extras para Aprendizado
 
-1. **Filtro de Médicos por Especialidade**: Crie um método no `ClinicaService` que receba uma especialidade como parâmetro e exiba apenas os médicos dessa área.
-2. **Histórico do Paciente**: Adicione um método que liste todas as consultas vinculadas a um determinado CPF de paciente.
-3. **Validação de Data**: Altere o método `AgendarConsulta` para impedir o agendamento de consultas em datas retroativas.
+1. **Protótipo de Prontuário Médico:** Crie uma nova classe ProntuarioTemplate que contenha perguntas e medições padrão de uma consulta inicial. Implemente a clonagem dessa estrutura para uso em triagens.
+2. **Carga Dinâmica de Protótipos:** Adicione um método no GerenciadorPrototipos que permita listar os nomes de todos os modelos disponíveis cadastrados.e.
+3. **Clonagem por Construtor de Cópia***: Tente reimplementar a classe PacoteExame utilizando o padrão de Copy Constructor (um construtor que aceita o próprio objeto como parâmetro public PacoteExame(PacoteExame outro)) em vez de utilizar o método MemberwiseClone(). Compare as abordagens.

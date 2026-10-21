@@ -69,6 +69,23 @@
                     </div>
                 </div>
             </div>  
-}       
+}
+        @section Scripts {
+            <script>
+                // Captura o evento de abertura do modal e preenche os dados dinamicamente
+                var deleteModal = document.getElementById('deleteModal');
+                deleteModal.addEventListener('show.bs.modal', function (event) {
+                    var button = event.relatedTarget;
+                    var id = button.getAttribute('data-id');
+                    var descricao = button.getAttribute('data-descricao');
+
+                    var modalDescricaoSpan = deleteModal.querySelector('#tarefaDescricao');
+                    modalDescricaoSpan.textContent = descricao;
+
+                    var deleteForm = deleteModal.querySelector('#deleteForm');
+                    deleteForm.action = '/Tarefa/Delete/' + id;
+                });
+            </script>
+        }
     </tbody>
 </table>
